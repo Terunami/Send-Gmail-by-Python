@@ -17,8 +17,8 @@ import io
 import csv
 import os.path
 from googleapiclient.discovery import build
-from google_auth_oauthlib.flow import InstallAppFlow
-from google.auth.transport.requests import requests
+from google_auth_oauthlib.flow import InstalledAppFlow
+from google.auth.transport.requests import Request
 from email.mime.text import MIMEText
 from apiclient import errors
 import logging
@@ -58,7 +58,7 @@ def list_message(service, user_id, query, label_ids=[], count=3):
         利用者のID
     query : str
         メールのクエリ文字列。　is:unread など
-    labels_ids : list
+    label_ids : list
         検索対象のラベルを示すIDのリスト
     count : str
         リターンするメール情報件数の上限
@@ -73,7 +73,7 @@ def list_message(service, user_id, query, label_ids=[], count=3):
         message_ids = (
             service.users()
             .messages()
-            .list(userId=user_id, maxResults=count, q=query, labelIDs=label_ids)
+            .list(userId=user_id, maxResults=count, q=query, labelIds=label_ids)
             .execute()
         )
 
@@ -99,7 +99,7 @@ def list_message(service, user_id, query, label_ids=[], count=3):
             # html メールの場合 plain/textのパートを使う
             else:
                 parts = message_detail['payload']['parts']
-                parts = [part for parts if part['mimeType'] == 'text/plain']
+                parts = [part for part in parts if part['mimeType'] == 'text/plain']
                 message["body"] = decode_base64url_data(
                     parts[0]['body']['data']
                 )
@@ -113,11 +113,11 @@ def list_message(service, user_id, query, label_ids=[], count=3):
             message["from"] = [
                 header["value"]
                 for header in message_detail["payload"]["headers"]
-                if header["name"] = "From"
+                if header["name"] == "From"
             ][0]
             logger.info(message_detail["snippet"])
-            message.append(message)
-        return message
+            messages.append(message)
+        return messages
 
     except errors.HttpError as error:
         print("An error occurred: %s" % error)
@@ -152,12 +152,12 @@ def main(query="is:unread", tag="daily_report", count=3):
     # ラベル一覧
     labels = list_labels(service, "me")
     target_label_ids = [label["id"] for label in labels if label["name"] == tag]
-    # メール一覧 [{'body': 'xxx', 'suject': 'xxx', 'from': 'xxx'},]
+    # メール一覧 [{'body': 'xxx', 'subject': 'xxx', 'from': 'xxx'},]
     messages = list_message(service, "me", query, target_label_ids, count=count)
     # unread label
     unread_label_ids = [label["id"] for label in labels if label["name"] == "UNREAD"]
     # remove labels form messages
-    remove_labels(service "me", messages, remove_labels=unread_label_ids)
+    remove_labels(service, "me", messages, remove_labels=unread_label_ids)
     logger.info(json.dumps(messages, ensure_ascii=False))
     if messages:
         return json.dumps(messages, ensure_ascii=False)
@@ -171,9 +171,7 @@ if __name__ == "__main__":
     query = arguments["<query>"]
     tag = arguments["<tag>"]
     count = arguments["<count>"]
-    logging.basicConfig(label=logging.DEBUG)
+    logging.basicConfig(level=logging.DEBUG)
 
     messages_ = main(query=query, tag=tag, count=count)
-    print(message_)
-
-        
+    print(messages_)

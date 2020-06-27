@@ -13,10 +13,10 @@ Options:
     --cc=<cc>     cc email address list(separated by '.').Default None.
 """
 import pickle
-import os.Path
+import os.path
 from googleapiclient.discovery import build
 from google_auth_oauthlib.flow import InstalledAppFlow
-from google.auth.transport.requests import Requests
+from google.auth.transport.requests import Request
 import base64
 from email.mime.base import MIMEBase
 from email.mime.text import MIMEText
@@ -53,7 +53,7 @@ def create_message_with_attachment(
     sender, to, subject, message_text, file_path, cc=None
 ):
     """
-    添付ファイル付きのMIMEMultipart()
+    添付ファイルつきのMIMEText を base64 エンコードする
     """
     message = MIMEMultipart()
     message["to"] = to
@@ -66,23 +66,23 @@ def create_message_with_attachment(
     msg = MIMEText(message_text.encode(enc), _charset=enc)
     message.attach(msg)
 
-    content_type, encoing, = minetypes.guess_type(file_path)
+    content_type, encoding = mimetypes.guess_type(file_path)
 
-    if content_thype is None or encoding is not None:
+    if content_type is None or encoding is not None:
         content_type = "application/octet-stream"
     main_type, sub_type = content_type.split("/", 1)
     if main_type == "text":
         with open(file_path, "rb") as fp:
-            msg = MIMEText(fp.read(), _subtype=subtype)
+            msg = MIMEText(fp.read(), _subtype=sub_type)
     elif main_type == "image":
         with open(file_path, "rb") as fp:
-            msg = MIMEText(fp.read(), _subtype=subtype)
+            msg = MIMEImage(fp.read(), _subtype=sub_type)
     elif main_type == "audio":
         with open(file_path, "rb") as fp:
-            msg = MIMEText(fp.read(), _subtype=subtype)
+            msg = MIMEAudio(fp.read(), _subtype=sub_type)
     else:
         with open(file_path, "rb") as fp:
-            msg = MIMEText(fp.read(), _subtype=subtype)
+            msg = MIMEBase(main_type, sub_type)
             msg.set_payload(fp.read())
     p = Path(file_path)
     msg.add_header("Content-Disposition", "attachment", filename=p.name)
@@ -92,7 +92,7 @@ def create_message_with_attachment(
     return {"raw": encode_message.decode()}
 
 
-def send_message(servicem user_id, message):
+def send_message(service, user_id, message):
     """
     メールを送信する
 
@@ -111,7 +111,7 @@ def send_message(servicem user_id, message):
     """
     try:
         sent_message = (
-            service.users().messages().send(userId, body=message).execute()
+            service.users().messages().send(userId=user_id, body=message).execute()
         )
         logger.info("Message Id: %s" % sent_message["id"])
         return None
@@ -119,6 +119,7 @@ def send_message(servicem user_id, message):
         logger.info("An error occurred: %s" % error)
         raise error
     
+
 
 # メイン処理
 def main(sender, to, subject, message_text, attach_file_path, cc=None):
@@ -139,7 +140,7 @@ def main(sender, to, subject, message_text, attach_file_path, cc=None):
 
 
 # プログラム実行部分
-if __name__ == __main__:
+if __name__ == "__main__":
     arguments = docopt(__doc__, version="0.1")
     sender = arguments["<sender>"]
     to = arguments["<to>"]

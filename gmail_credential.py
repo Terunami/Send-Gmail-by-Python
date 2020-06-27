@@ -1,6 +1,6 @@
-import ps
+import os
 import pickle
-from google.auth.transport.requests import requests
+from google.auth.transport.requests import Request
 from google_auth_oauthlib.flow import InstalledAppFlow
 
 # Gmail APIのスコープを設定
@@ -19,7 +19,7 @@ def get_credential():
     カレントディレクトリに pickle 形式でトークンを保存し、再利用できるようにする。
     """
     creds = None
-    if ps.path.exists("token.pickle"):
+    if os.path.exists("token.pickle"):
         with open("token.pickle", "rb") as token:
             creds = pickle.load(token)
     if not creds or not creds.valid:
