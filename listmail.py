@@ -19,7 +19,7 @@ import os.path
 from googleapiclient.discovery import build
 from google_auth_oauthlib.flow import InstallAppFlow
 from google.auth.transport.requests import requests
-from email.mine.text import MINEText
+from email.mime.text import MIMEText
 from apiclient import errors
 import logging
 from docopt import docopt
@@ -99,7 +99,7 @@ def list_message(service, user_id, query, label_ids=[], count=3):
             # html メールの場合 plain/textのパートを使う
             else:
                 parts = message_detail['payload']['parts']
-                parts = [part for parts if part['mineType'] == 'text/plain']
+                parts = [part for parts if part['mimeType'] == 'text/plain']
                 message["body"] = decode_base64url_data(
                     parts[0]['body']['data']
                 )
