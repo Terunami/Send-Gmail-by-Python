@@ -71,17 +71,20 @@ def create_message_with_attachment(
     if content_type is None or encoding is not None:
         content_type = "application/octet-stream"
     main_type, sub_type = content_type.split("/", 1)
+    # mac では openのモード"rb" により b'' で囲まれ文字列を MIMEText で読み込めないらしい
+    # Windows では使える可能性があるので要検証
+    # また、バイナリでないと壊れてしまうものもあるので注意
     if main_type == "text":
-        with open(file_path, "rb") as fp:
+        with open(file_path, "r") as fp:
             msg = MIMEText(fp.read(), _subtype=sub_type)
     elif main_type == "image":
-        with open(file_path, "rb") as fp:
+        with open(file_path, "r") as fp:
             msg = MIMEImage(fp.read(), _subtype=sub_type)
     elif main_type == "audio":
-        with open(file_path, "rb") as fp:
+        with open(file_path, "r") as fp:
             msg = MIMEAudio(fp.read(), _subtype=sub_type)
     else:
-        with open(file_path, "rb") as fp:
+        with open(file_path, "r") as fp:
             msg = MIMEBase(main_type, sub_type)
             msg.set_payload(fp.read())
     p = Path(file_path)
